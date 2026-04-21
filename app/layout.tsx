@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { MobileNav } from "@/components/mobile-nav";
 import { Header } from "@/components/header";
+import { BottomNav } from "@/components/custom-ui/bottom-nav";
 
 const fontSans = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -32,6 +32,7 @@ export default function RootLayout({
         <ThemeProvider>
           <Header />
           {children}
+          <BottomNav />
         </ThemeProvider>
       </body>
     </html>
