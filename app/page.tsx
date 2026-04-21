@@ -8,6 +8,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { ActionCard } from "@/components/custom-ui/action-cart";
+import { Container } from "@/components/container";
 
 type ActionColor = "indigo" | "violet" | "emerald" | "amber" | "rose";
 
@@ -58,7 +59,7 @@ const actions = [
 export default function Home() {
   return (
     <div className="min-h-screen w-full bg-background text-foreground">
-      <main className="mx-auto w-full max-w-full px-4 py-8 sm:px-6 md:max-w-3xl">
+      <Container as="main" size="sm" className="py-8">
         <div className="grid w-full grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3">
           {actions.map((item, index) => {
             const Icon = item.icon;
@@ -85,7 +86,7 @@ export default function Home() {
             );
           })}
         </div>
-      </main>
+      </Container>
     </div>
   );
 }
