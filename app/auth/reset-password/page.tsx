@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label'
 
 export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<ResetPasswordFallback />}>
+      <ResetPasswordContent />
+    </Suspense>
+  )
+}
+
+function ResetPasswordContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const email = searchParams.get('email') || ''
@@ -225,6 +233,17 @@ export default function ResetPasswordPage() {
           </div>
         </div>
       </CardContent>
+    </Card>
+  )
+}
+
+function ResetPasswordFallback() {
+  return (
+    <Card className="border-0 shadow-lg">
+      <CardHeader className="space-y-2 pb-4">
+        <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
+        <CardDescription>Loading reset password form...</CardDescription>
+      </CardHeader>
     </Card>
   )
 }
