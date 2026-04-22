@@ -1,11 +1,17 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
-const BackButton = ({ onPress }: { onPress: () => void }) => {
+const BackButton = ({
+  onPress,
+  className,
+}: {
+  onPress: () => void;
+  className?: string;
+}) => {
   return (
-    <div className="my-4">
+    <div className={cn("my-4", className)}>
       <Button
         variant="ghost"
         size="sm"

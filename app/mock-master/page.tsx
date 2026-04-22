@@ -1,12 +1,11 @@
 "use client";
-
 import { useMemo, useState } from "react";
 import { Container } from "@/components/container";
 import TopicSearchHeader from "@/components/custom-ui/topic-search-header";
 import TopicCard from "@/components/custom-ui/topic-card";
 import { useRouter } from "next/navigation";
 
-const READING_TOPICS = [
+const MOCK_MASTER_TOPICS = [
   "Basic Part",
   "Sentence Structure",
   "Noun",
@@ -26,7 +25,7 @@ const READING_TOPICS = [
   "Phrasal Verbs",
 ];
 
-const ReadingPage = () => {
+const MockMaster = () => {
   const router = useRouter();
   const [search, setSearch] = useState("");
 
@@ -34,11 +33,11 @@ const ReadingPage = () => {
     const query = search.trim().toLowerCase();
 
     if (!query) {
-      return READING_TOPICS;
+      return MOCK_MASTER_TOPICS;
     }
 
-    return READING_TOPICS.filter((topic) =>
-      topic.toLowerCase().includes(query),
+    return MOCK_MASTER_TOPICS.filter((topic) =>
+      topic.toLowerCase().includes(query)
     );
   }, [search]);
 
@@ -49,16 +48,12 @@ const ReadingPage = () => {
           onBack={() => router.back()}
           value={search}
           onValueChange={setSearch}
-          placeholder="Search reading topics..."
+          placeholder="Search mock master topics..."
         />
 
         <div className="grid gap-4">
           {filteredTopics.map((topic) => (
-            <TopicCard
-              key={topic}
-              title={topic}
-              href={`/reading/topic/${topic.toLowerCase().replace(/\s+/g, "-")}`}
-            />
+            <TopicCard variant="selectable" key={topic} title={topic} />
           ))}
         </div>
 
@@ -71,5 +66,4 @@ const ReadingPage = () => {
     </main>
   );
 };
-
-export default ReadingPage;
+export default MockMaster;

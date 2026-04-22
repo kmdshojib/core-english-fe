@@ -214,10 +214,6 @@ export function QuizOption({ question, onAnswer }: QuizCardProps) {
               </div>
             )}
           </div>
-
-          <Button onClick={() => setOpenModal(false)} className="w-full mt-4">
-            চলুন
-          </Button>
         </DialogContent>
       </Dialog>
     </>

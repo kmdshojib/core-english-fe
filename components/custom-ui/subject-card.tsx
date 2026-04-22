@@ -1,8 +1,9 @@
 "use client";
 
-import { Heart } from "lucide-react";
+import { BookOpen, CircleHelp, Shuffle } from "lucide-react";
+
+import { ProgressCircle } from "../ProgressCircle";
 import { Button } from "@/components/ui/button";
-import { ProgressCircle } from "./ProgressCircle";
 
 interface SubjectCardProps {
   title: string;
@@ -27,75 +28,102 @@ export function SubjectCard({
   percentage,
   subtopics,
   questions,
-  isFavorited = false,
-  onFavorite,
   onAllQuestions,
   onAllSubtopics,
   onRandomQuiz,
   secondaryText = "পড়া হয়েছে",
 }: SubjectCardProps) {
-  const radius = 40;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (percentage / 100) * circumference;
   return (
-    <div className="w-full rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4 sm:space-y-6">
-      {/* Header with title and favorite */}
-      <div className="flex items-center justify-between gap-4 ">
-        <ProgressCircle
-          value={percentage}
-          size={58}
-          strokeWidth={4}
-          text={`${progress.completed}/${progress.total}`}
-        />
-        <h3 className="text-lg sm:text-xl font-bold text-foreground flex-1 line-clamp-2">
-          {title}
-        </h3>
-      </div>
+    <article className="overflow-hidden rounded-3xl border border-border/80 bg-card/95 shadow-sm">
+      <div className="h-1.5 w-full bg-gradient-to-r from-rose-500 via-amber-400 to-indigo-500" />
 
-      {/* Progress Circle and Stats */}
-      <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-        <div className="flex-1 space-y-2 w-full">
-          <div>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              {percentage}% complete
+      <div className="space-y-5 p-4 sm:p-5">
+        <div className="flex items-start gap-4">
+          <ProgressCircle
+            value={percentage}
+            size={68}
+            strokeWidth={5}
+            text={`${progress.completed}/${progress.total}`}
+            className="shrink-0"
+          />
+
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+              Topic Expert
             </p>
-            <p className="text-xs text-muted-foreground">{secondaryText}</p>
-          </div>
-          <div className="space-y-1 text-xs sm:text-sm">
-            <p className="text-foreground">
-              Subtopics: <span className="font-semibold">{subtopics}</span>
-            </p>
-            <p className="text-foreground">
-              Questions: <span className="font-semibold">{questions}</span>
+            <h3 className="mt-1 line-clamp-2 text-xl font-bold leading-tight text-foreground">
+              {title}
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {percentage}% complete · {secondaryText}
             </p>
           </div>
         </div>
-      </div>
 
-      {/* Action Buttons */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
-        <Button
-          onClick={onAllQuestions}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm py-2 h-auto rounded-lg"
-          size="sm"
-        >
-          Questions
-        </Button>
-        <Button
-          onClick={onAllSubtopics}
-          className="bg-amber-600 hover:bg-amber-700 text-white text-xs sm:text-sm py-2 h-auto rounded-lg"
-          size="sm"
-        >
-          Subtopics
-        </Button>
-        <Button
-          onClick={onRandomQuiz}
-          className="bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm py-2 h-auto rounded-lg"
-          size="sm"
-        >
-          Random Quiz
-        </Button>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-2xl bg-muted/50 px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Subtopics
+            </p>
+            <p className="mt-1 text-lg font-semibold text-foreground">
+              {subtopics}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-muted/50 px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Questions
+            </p>
+            <p className="mt-1 text-lg font-semibold text-foreground">
+              {questions}
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-border/70 bg-background/70 px-4 py-3">
+          <div className="mb-2 flex items-center justify-between text-sm">
+            <span className="font-medium text-foreground">Progress</span>
+            <span className="text-muted-foreground">
+              {progress.completed}/{progress.total} lessons
+            </span>
+          </div>
+          <div className="h-2 rounded-full bg-muted">
+            <div
+              className="h-2 rounded-full bg-gradient-to-r from-indigo-500 via-violet-500 to-amber-400 transition-all"
+              style={{ width: `${Math.max(0, Math.min(100, percentage))}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+          <Button
+            type="button"
+            onClick={onAllSubtopics}
+            className="h-11 justify-start rounded-2xl bg-amber-500 text-sm font-semibold text-white hover:bg-amber-600 sm:justify-center"
+          >
+            <BookOpen className="mr-2 h-4 w-4 sm:hidden" />
+            All Subtopics
+          </Button>
+
+          <Button
+            type="button"
+            onClick={onAllQuestions}
+            className="h-11 justify-start rounded-2xl bg-indigo-500 text-sm font-semibold text-white hover:bg-indigo-600 sm:justify-center"
+          >
+            <CircleHelp className="mr-2 h-4 w-4 sm:hidden" />
+            All Questions
+          </Button>
+
+          <Button
+            type="button"
+            onClick={onRandomQuiz}
+            className="h-11 justify-start rounded-2xl bg-rose-500 text-sm font-semibold text-white hover:bg-rose-600 sm:justify-center"
+          >
+            <Shuffle className="mr-2 h-4 w-4 sm:hidden" />
+            Random Quiz
+          </Button>
+        </div>
       </div>
-    </div>
+    </article>
   );
 }

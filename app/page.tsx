@@ -14,7 +14,7 @@ type ActionColor = "indigo" | "violet" | "emerald" | "amber" | "rose";
 
 const actions = [
   {
-    href: "/mock",
+    href: "/mock-master",
     label: "Mock Master",
     icon: Target,
     color: "indigo",
@@ -42,7 +42,7 @@ const actions = [
     iconColor: "text-amber-400",
   },
   {
-    href: "/expert",
+    href: "/topic-expert",
     label: "Topic Expert",
     icon: GraduationCap,
     color: "rose",

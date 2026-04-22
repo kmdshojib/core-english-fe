@@ -138,7 +138,7 @@ function SectionHeader({
       <div
         className={cn(
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
-          accent
+          accent,
         )}
       >
         {icon}
@@ -220,9 +220,11 @@ function PreviousQuestionsSection({
 
       <div className="p-5 sm:p-6">
         <button
+          type="button"
+          title="prev-questions-toggle"
           onClick={() => setExpanded((e) => !e)}
           className="w-full flex items-center justify-between group"
-          aria-expanded={expanded}
+          aria-expanded={expanded ? "true" : "false"}
           id="prev-questions-toggle"
         >
           <div className="flex items-center gap-3">
@@ -312,7 +314,7 @@ const TopicPage = ({ params }: TopicPageProps) => {
                   "rounded-full px-3 py-0.5 text-xs font-medium",
                   i === 0
                     ? "bg-primary/20 text-primary"
-                    : "bg-foreground/5 text-muted-foreground"
+                    : "bg-foreground/5 text-muted-foreground",
                 )}
               >
                 {tag}
@@ -340,7 +342,9 @@ const TopicPage = ({ params }: TopicPageProps) => {
                   Ready to Test Yourself?
                 </h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Take the full exam on <span className="font-medium text-foreground">{label}</span> and track your score.
+                  Take the full exam on{" "}
+                  <span className="font-medium text-foreground">{label}</span>{" "}
+                  and track your score.
                 </p>
               </div>
               <Button
