@@ -1,9 +1,22 @@
 "use client";
 import { useMemo, useState } from "react";
 import { Container } from "@/components/container";
+import { QuizAction } from "@/components/custom-ui/quiz-action";
 import TopicSearchHeader from "@/components/custom-ui/topic-search-header";
 import TopicCard from "@/components/custom-ui/topic-card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useRouter } from "next/navigation";
+import { ClipboardList } from "lucide-react";
 
 const MOCK_MASTER_TOPICS = [
   "Basic Part",
@@ -25,9 +38,17 @@ const MOCK_MASTER_TOPICS = [
   "Phrasal Verbs",
 ];
 
+const MIN_QUESTIONS = 10;
+const MAX_QUESTIONS = 50;
+const QUESTION_STEP = 5;
+
 const MockMaster = () => {
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [questionCount, setQuestionCount] = useState(25);
+  const [starting, setStarting] = useState(false);
+  const [startConfirmationOpen, setStartConfirmationOpen] = useState(false);
 
   const filteredTopics = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -37,12 +58,45 @@ const MockMaster = () => {
     }
 
     return MOCK_MASTER_TOPICS.filter((topic) =>
-      topic.toLowerCase().includes(query)
+      topic.toLowerCase().includes(query),
     );
   }, [search]);
 
+  const handleTopicSelect = (topic: string, selected: boolean) => {
+    setSelectedTopics((current) => {
+      if (selected) {
+        return current.includes(topic) ? current : [...current, topic];
+      }
+
+      return current.filter((item) => item !== topic);
+    });
+  };
+
+  const handleStartMock = () => {
+    if (selectedTopics.length === 0) {
+      return;
+    }
+
+    setStarting(true);
+
+    const params = new URLSearchParams({
+      topics: selectedTopics.join("||"),
+      questions: String(questionCount),
+      time: String(Math.max(10, questionCount)),
+      negative: "true",
+    });
+
+    router.push(`/mock-master/exam?${params.toString()}`);
+  };
+
   return (
-    <main className="min-h-screen bg-background pb-12 text-foreground">
+    <main
+      className={`min-h-screen bg-background text-foreground ${
+        selectedTopics.length > 0 ? "pb-72" : "pb-12"
+      }`}
+    >
+      {selectedTopics.length > 0 && <div data-hide-bottom-nav="true" />}
+
       <Container size="sm">
         <TopicSearchHeader
           onBack={() => router.back()}
@@ -53,7 +107,13 @@ const MockMaster = () => {
 
         <div className="grid gap-4">
           {filteredTopics.map((topic) => (
-            <TopicCard variant="selectable" key={topic} title={topic} />
+            <TopicCard
+              variant="selectable"
+              key={topic}
+              title={topic}
+              selected={selectedTopics.includes(topic)}
+              onSelect={handleTopicSelect}
+            />
           ))}
         </div>
 
@@ -63,6 +123,53 @@ const MockMaster = () => {
           </div>
         )}
       </Container>
+
+      {selectedTopics.length > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 px-4 py-5 shadow-[0_-18px_45px_-24px_rgba(0,0,0,0.65)] backdrop-blur-xl">
+          <Container size="sm" className="px-0">
+            <QuizAction
+              questionCount={questionCount}
+              selectedCount={selectedTopics.length}
+              onDecreaseQuestions={() =>
+                setQuestionCount((current) =>
+                  Math.max(MIN_QUESTIONS, current - QUESTION_STEP),
+                )
+              }
+              onIncreaseQuestions={() =>
+                setQuestionCount((current) =>
+                  Math.min(MAX_QUESTIONS, current + QUESTION_STEP),
+                )
+              }
+              onStart={() => setStartConfirmationOpen(true)}
+              loading={starting}
+            />
+          </Container>
+        </div>
+      )}
+
+      <AlertDialog
+        open={startConfirmationOpen}
+        onOpenChange={setStartConfirmationOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogMedia>
+              <ClipboardList className="size-8" />
+            </AlertDialogMedia>
+            <AlertDialogTitle>মক পরীক্ষা শুরু করবেন?</AlertDialogTitle>
+            <AlertDialogDescription>
+              নির্বাচিত {selectedTopics.length}টি টপিক থেকে {questionCount}টি
+              MCQ থাকবে। শুরু করলে টাইমার চালু হবে।
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={starting}>না</AlertDialogCancel>
+            <AlertDialogAction onClick={handleStartMock} disabled={starting}>
+              শুরু করো
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 };

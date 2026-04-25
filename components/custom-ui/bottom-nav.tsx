@@ -23,7 +23,7 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="fixed inset-x-0 bottom-0 z-40 px-2 pb-2 sm:px-4 sm:pb-4">
+      <nav className="app-bottom-nav fixed inset-x-0 bottom-0 z-40 px-2 pb-2 sm:px-4 sm:pb-4">
         <div className="mx-auto flex w-full max-w-xl items-center justify-around gap-1 rounded-[1.75rem] border border-border/70 bg-background/90 px-2 py-2 shadow-[0_12px_40px_-16px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:max-w-3xl sm:gap-2 sm:px-3">
           {navItems.map((item) => {
             const IconComponent = item.icon;
@@ -64,7 +64,7 @@ export function BottomNav() {
         </div>
       </nav>
 
-      <div aria-hidden="true" className="h-24 sm:h-28" />
+      <div aria-hidden="true" className="app-bottom-nav-spacer h-24 sm:h-28" />
     </>
   );
 }

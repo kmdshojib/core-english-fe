@@ -9,6 +9,7 @@ interface TopicCardProps {
   icon?: React.ReactNode;
   variant?: "default" | "selectable";
   href?: string;
+  selected?: boolean;
   onSelect?: (title: string, selected: boolean) => void;
 }
 
@@ -17,30 +18,34 @@ const TopicCard: React.FC<TopicCardProps> = ({
   icon,
   variant = "default",
   href,
+  selected: selectedProp,
   onSelect,
 }) => {
-  const [selected, setSelected] = useState(false);
+  const [internalSelected, setInternalSelected] = useState(false);
+  const selected = selectedProp ?? internalSelected;
 
   const handleSelect = () => {
     if (variant !== "selectable") return;
 
     const newValue = !selected;
-    setSelected(newValue);
+    if (selectedProp === undefined) {
+      setInternalSelected(newValue);
+    }
     onSelect?.(title, newValue);
   };
 
   const content = (
     <div
       onClick={handleSelect}
-      className={`group relative overflow-hidden rounded-2xl border p-6 shadow-sm transition-all duration-300
+      className={`group relative overflow-hidden rounded-[1.75rem] border p-5 shadow-sm transition-all duration-300
       ${
         variant === "selectable" && selected
-          ? "border-primary bg-primary/10"
-          : "border-border bg-card hover:shadow-md hover:border-foreground/20 hover:bg-card/95"
+          ? "border-primary/60 bg-primary/10 shadow-[0_18px_40px_-30px_rgba(14,165,233,0.55)]"
+          : "border-border/80 bg-card hover:-translate-y-0.5 hover:border-foreground/20 hover:bg-card/95 hover:shadow-lg"
       }`}
     >
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 flex-1">
+        <div className="flex flex-1 items-center gap-3">
           {/* Checkbox (only for selectable) */}
           {variant === "selectable" && (
             <input
@@ -63,9 +68,16 @@ const TopicCard: React.FC<TopicCardProps> = ({
           )}
 
           {/* Title */}
-          <h2 className="text-xl font-semibold tracking-tight text-foreground">
-            {title}
-          </h2>
+          <div className="space-y-1">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+              {title}
+            </h2>
+            {variant === "selectable" && (
+              <p className="text-sm text-muted-foreground">
+                {selected ? "Selected for this mock" : "Tap to add this topic"}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Arrow only for default */}
