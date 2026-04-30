@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Dialog,
   DialogContent,
@@ -24,9 +24,14 @@ export interface QuizQuestion {
 interface QuizCardProps {
   question: QuizQuestion;
   onAnswer?: (optionId: string) => void;
+  headerAction?: ReactNode;
 }
 
-export function QuizOption({ question, onAnswer }: QuizCardProps) {
+export function QuizOption({
+  question,
+  onAnswer,
+  headerAction,
+}: QuizCardProps) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [showExplanationModal, setShowExplanationModal] = useState(false);
@@ -115,13 +120,7 @@ export function QuizOption({ question, onAnswer }: QuizCardProps) {
             <span className="text-sm sm:text-base">{question.id}.</span>{" "}
             {question.question}
           </h3>
-          <button
-            onClick={() => setIsFavorite(!isFavorite)}
-            className="text-border hover:text-destructive transition-colors flex-shrink-0 p-1.5 sm:p-2"
-            aria-label="Add to favorites"
-          >
-            <CircleIcon size={18} />
-          </button>
+          {headerAction}
         </div>
 
         {/* Options */}

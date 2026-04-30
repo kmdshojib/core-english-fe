@@ -37,48 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const QUESTION_BANK = [
-  {
-    prompt: "Choose the correct sentence.",
-    options: [
-      "He go to school.",
-      "He goes to school.",
-      "He going school.",
-      "He gone to school.",
-    ],
-    answer: 1,
-    explanation:
-      "He goes to school is correct because the subject is third person singular, so the verb takes 'es'.",
-  },
-  {
-    prompt: "Identify the noun in the sentence: The teacher smiled.",
-    options: ["The", "teacher", "smiled", "sentence"],
-    answer: 1,
-    explanation:
-      "Teacher is the naming word here, so it functions as the noun in the sentence.",
-  },
-  {
-    prompt: "Select the correct synonym of 'rapid'.",
-    options: ["slow", "quick", "weak", "late"],
-    answer: 1,
-    explanation:
-      "Rapid means fast or quick, so 'quick' is the closest synonym.",
-  },
-  {
-    prompt: "Which one is a modal auxiliary?",
-    options: ["can", "run", "book", "quickly"],
-    answer: 0,
-    explanation:
-      "'Can' is a modal auxiliary because it helps express ability or possibility.",
-  },
-  {
-    prompt: "Choose the correct plural form of 'child'.",
-    options: ["childs", "childes", "children", "childrens"],
-    answer: 2,
-    explanation: "'Children' is the irregular plural form of 'child'.",
-  },
-];
+import { getMockExamQuestions, type QuestionSource } from "@/lib/quiz-content";
 
 const OPTION_LABELS = ["ক", "খ", "গ", "ঘ"];
 type AnswerFilter = "all" | "answered" | "unanswered";
@@ -102,6 +61,14 @@ interface StoredMockResult {
   questions: MockQuestion[];
 }
 
+type MockExamClientProps = {
+  title?: string;
+  homePath?: string;
+  resultPath?: string;
+  resultStoragePrefix?: string;
+  questionSource?: QuestionSource;
+};
+
 function formatTime(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -109,10 +76,18 @@ function formatTime(totalSeconds: number) {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-export function MockExamClient() {
+export function MockExamClient({
+  title = "মক পরীক্ষা",
+  homePath = "/mock-master",
+  resultPath = "/mock-master/result",
+  resultStoragePrefix = RESULT_STORAGE_PREFIX,
+  questionSource = "all",
+}: MockExamClientProps = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const reviewId = searchParams.get("review");
+  const sourceParam = searchParams.get("source") as QuestionSource | null;
+  const activeQuestionSource = sourceParam ?? questionSource;
   const topicsParam = searchParams.get("topics") ?? "";
   const [reviewResult, setReviewResult] = useState<StoredMockResult | null>(
     null,
@@ -156,18 +131,8 @@ export function MockExamClient() {
       return reviewResult.questions;
     }
 
-    return Array.from({ length: questionCount }, (_, index) => {
-      const base = QUESTION_BANK[index % QUESTION_BANK.length];
-      const questionTopic = topics[index % topics.length];
-
-      return {
-        ...base,
-        id: index + 1,
-        topic: questionTopic,
-        prompt: `${base.prompt} (${questionTopic})`,
-      };
-    });
-  }, [questionCount, reviewResult, topics]);
+    return getMockExamQuestions(topics, questionCount, activeQuestionSource);
+  }, [activeQuestionSource, questionCount, reviewResult, topics]);
 
   const activeExplanationQuestion =
     questions.find((question) => question.id === explanationQuestionId) ?? null;
@@ -253,7 +218,7 @@ export function MockExamClient() {
       };
 
       window.sessionStorage.setItem(
-        `${RESULT_STORAGE_PREFIX}:${resultId}`,
+        `${resultStoragePrefix}:${resultId}`,
         JSON.stringify(result),
       );
       setSubmitted(true);
@@ -261,7 +226,7 @@ export function MockExamClient() {
       setBackConfirmationOpen(false);
 
       if (redirectToResult) {
-        router.push(`/mock-master/result?id=${resultId}`);
+        router.push(`${resultPath}?id=${resultId}`);
       }
     },
     [
@@ -270,6 +235,8 @@ export function MockExamClient() {
       correctCount,
       hasNegativeMarking,
       questions,
+      resultPath,
+      resultStoragePrefix,
       router,
       score,
       topics,
@@ -285,7 +252,7 @@ export function MockExamClient() {
     }
 
     const storedResult = window.sessionStorage.getItem(
-      `${RESULT_STORAGE_PREFIX}:${reviewId}`,
+      `${resultStoragePrefix}:${reviewId}`,
     );
 
     if (!storedResult) {
@@ -310,7 +277,7 @@ export function MockExamClient() {
     setLockedQuestions(restoredLocks);
     setSubmitted(true);
     setRemainingSeconds(0);
-  }, [reviewId]);
+  }, [resultStoragePrefix, reviewId]);
 
   useEffect(() => {
     if (submitted || reviewId) {
@@ -366,9 +333,7 @@ export function MockExamClient() {
 
   const handleBackPress = () => {
     if (submitted) {
-      router.push(
-        reviewId ? `/mock-master/result?id=${reviewId}` : "/mock-master",
-      );
+      router.push(reviewId ? `${resultPath}?id=${reviewId}` : homePath);
       return;
     }
 
@@ -377,7 +342,7 @@ export function MockExamClient() {
 
   const handleSubmitAndLeave = () => {
     finishExam(false);
-    router.push("/mock-master");
+    router.push(homePath);
   };
 
   return (
@@ -397,7 +362,7 @@ export function MockExamClient() {
               <ArrowLeft className="size-5" />
             </Button>
             <div className="min-w-0 flex-1 text-center">
-              <h1 className="truncate text-xl font-bold">মক পরীক্ষা</h1>
+              <h1 className="truncate text-xl font-bold">{title}</h1>
               <p className="text-sm text-muted-foreground">
                 {topics.length}টি টপিক • সময়ঃ {totalTime} মিনিট
               </p>

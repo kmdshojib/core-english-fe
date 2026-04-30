@@ -8,12 +8,12 @@ import BackButton from "@/components/custom-ui/back-button";
 import { RandomQuizDialog } from "@/components/custom-ui/random-quiz-dialog";
 import { SubjectCard } from "@/components/custom-ui/subject-card";
 import {
+  PREVIOUS_YEAR_SUBJECTS,
   slugifyTopic,
-  TOPIC_EXPERT_SUBJECTS,
   type QuizSubject,
 } from "@/lib/quiz-content";
 
-const TopicExpert = () => {
+const PreviousYearQuestion = () => {
   const router = useRouter();
   const [quizSubject, setQuizSubject] = useState<QuizSubject | null>(null);
 
@@ -23,7 +23,7 @@ const TopicExpert = () => {
         <BackButton onPress={() => router.back()} />
 
         <section className="mt-6 space-y-4">
-          {TOPIC_EXPERT_SUBJECTS.map((subject) => (
+          {PREVIOUS_YEAR_SUBJECTS.map((subject) => (
             <SubjectCard
               key={subject.title}
               title={subject.title}
@@ -32,9 +32,11 @@ const TopicExpert = () => {
               subtopics={subject.subtopics}
               questions={subject.questions}
               showSubtopics={false}
+              eyebrow="Previous Year"
+              secondaryText="প্র্যাকটিস হয়েছে"
               onAllQuestions={() =>
                 router.push(
-                  `/topic-expert/questions/${slugifyTopic(subject.title)}`,
+                  `/previous/questions/${slugifyTopic(subject.title)}`,
                 )
               }
               onRandomQuiz={() => setQuizSubject(subject)}
@@ -46,7 +48,7 @@ const TopicExpert = () => {
       <RandomQuizDialog
         topic={quizSubject?.title ?? null}
         maxQuestions={quizSubject?.questions}
-        examPath="/topic-expert/exam"
+        examPath="/previous/exam"
         open={quizSubject !== null}
         onOpenChange={(open) => {
           if (!open) {
@@ -58,4 +60,4 @@ const TopicExpert = () => {
   );
 };
 
-export default TopicExpert;
+export default PreviousYearQuestion;

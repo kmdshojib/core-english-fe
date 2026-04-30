@@ -19,7 +19,9 @@ interface SubjectCardProps {
   onAllQuestions?: () => void;
   onAllSubtopics?: () => void;
   onRandomQuiz?: () => void;
+  showSubtopics?: boolean;
   secondaryText?: string;
+  eyebrow?: string;
 }
 
 export function SubjectCard({
@@ -31,8 +33,15 @@ export function SubjectCard({
   onAllQuestions,
   onAllSubtopics,
   onRandomQuiz,
+  showSubtopics = true,
   secondaryText = "পড়া হয়েছে",
+  eyebrow = "Topic Expert",
 }: SubjectCardProps) {
+  const actionCount =
+    Number(Boolean(showSubtopics && onAllSubtopics)) +
+    Number(Boolean(onAllQuestions)) +
+    Number(Boolean(onRandomQuiz));
+
   return (
     <article className="overflow-hidden rounded-3xl border border-border/80 bg-card/95 shadow-sm">
       <div className="h-1.5 w-full bg-gradient-to-r from-rose-500 via-amber-400 to-indigo-500" />
@@ -48,9 +57,11 @@ export function SubjectCard({
           />
 
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-              Topic Expert
-            </p>
+            {eyebrow && (
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                {eyebrow}
+              </p>
+            )}
             <h3 className="mt-1 line-clamp-2 text-xl font-bold leading-tight text-foreground">
               {title}
             </h3>
@@ -60,17 +71,19 @@ export function SubjectCard({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-muted/50 px-4 py-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Subtopics
-            </p>
-            <p className="mt-1 text-lg font-semibold text-foreground">
-              {subtopics}
-            </p>
-          </div>
+        <div className={`grid gap-3 ${showSubtopics ? "grid-cols-2" : ""}`}>
+          {showSubtopics && (
+            <div className="rounded-2xl bg-muted/50 px-4 py-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Subtopics
+              </p>
+              <p className="mt-1 text-lg font-semibold text-foreground">
+                {subtopics}
+              </p>
+            </div>
+          )}
 
-          <div className="rounded-2xl bg-muted/50 px-4 py-3">
+          <div className="rounded-2xl bg-muted/50 px-4 py-2 flex flex-row items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Questions
             </p>
@@ -95,33 +108,43 @@ export function SubjectCard({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-          <Button
-            type="button"
-            onClick={onAllSubtopics}
-            className="h-11 justify-start rounded-2xl bg-amber-500 text-sm font-semibold text-white hover:bg-amber-600 sm:justify-center"
-          >
-            <BookOpen className="mr-2 h-4 w-4 sm:hidden" />
-            All Subtopics
-          </Button>
+        <div
+          className={`grid grid-cols-1 gap-2.5 ${
+            actionCount >= 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"
+          }`}
+        >
+          {showSubtopics && onAllSubtopics && (
+            <Button
+              type="button"
+              onClick={onAllSubtopics}
+              className="h-11 justify-start rounded-2xl bg-amber-500 text-sm font-semibold text-white hover:bg-amber-600 sm:justify-center"
+            >
+              <BookOpen className="mr-2 h-4 w-4 sm:hidden" />
+              All Subtopics
+            </Button>
+          )}
 
-          <Button
-            type="button"
-            onClick={onAllQuestions}
-            className="h-11 justify-start rounded-2xl bg-indigo-500 text-sm font-semibold text-white hover:bg-indigo-600 sm:justify-center"
-          >
-            <CircleHelp className="mr-2 h-4 w-4 sm:hidden" />
-            All Questions
-          </Button>
+          {onAllQuestions && (
+            <Button
+              type="button"
+              onClick={onAllQuestions}
+              className="h-11 justify-start rounded-2xl bg-indigo-500 text-sm font-semibold text-white hover:bg-indigo-600 sm:justify-center"
+            >
+              <CircleHelp className="mr-2 h-4 w-4 sm:hidden" />
+              All Questions
+            </Button>
+          )}
 
-          <Button
-            type="button"
-            onClick={onRandomQuiz}
-            className="h-11 justify-start rounded-2xl bg-rose-500 text-sm font-semibold text-white hover:bg-rose-600 sm:justify-center"
-          >
-            <Shuffle className="mr-2 h-4 w-4 sm:hidden" />
-            Random Quiz
-          </Button>
+          {onRandomQuiz && (
+            <Button
+              type="button"
+              onClick={onRandomQuiz}
+              className="h-11 justify-start rounded-2xl bg-rose-500 text-sm font-semibold text-white hover:bg-rose-600 sm:justify-center"
+            >
+              <Shuffle className="mr-2 h-4 w-4 sm:hidden" />
+              Random Quiz
+            </Button>
+          )}
         </div>
       </div>
     </article>

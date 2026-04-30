@@ -4,6 +4,7 @@ import { use, useState } from "react";
 import { Container } from "@/components/container";
 import BackButton from "@/components/custom-ui/back-button";
 import { QuizOption, QuizQuestion } from "@/components/custom-ui/quiz-option";
+import { RandomQuizDialog } from "@/components/custom-ui/random-quiz-dialog";
 import { Button } from "@/components/ui/button";
 import {
   BookOpen,
@@ -272,6 +273,7 @@ type TopicPageProps = {
 const TopicPage = ({ params }: TopicPageProps) => {
   const { id } = use(params);
   const router = useRouter();
+  const [mockDialogOpen, setMockDialogOpen] = useState(false);
 
   const label = formatTopicLabel(id);
   const content = READING_CONTENT[id] ?? {
@@ -342,7 +344,7 @@ const TopicPage = ({ params }: TopicPageProps) => {
                   Ready to Test Yourself?
                 </h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Take the full exam on{" "}
+                  Start a previous year mock on{" "}
                   <span className="font-medium text-foreground">{label}</span>{" "}
                   and track your score.
                 </p>
@@ -350,20 +352,23 @@ const TopicPage = ({ params }: TopicPageProps) => {
               <Button
                 id="take-exam-btn"
                 size="lg"
+                onClick={() => setMockDialogOpen(true)}
                 className="w-full max-w-xs gap-2 rounded-xl font-semibold shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0"
-                disabled
-                title="Coming soon"
               >
                 <ClipboardList className="h-4 w-4" />
-                Take Exam
-                <span className="ml-1 rounded-full bg-primary-foreground/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-                  Soon
-                </span>
+                Previous Year Mock
               </Button>
             </div>
           </div>
         </div>
       </Container>
+
+      <RandomQuizDialog
+        topic={label}
+        examPath="/previous/exam"
+        open={mockDialogOpen}
+        onOpenChange={setMockDialogOpen}
+      />
     </main>
   );
 };

@@ -42,7 +42,17 @@ interface MockResult {
   rows: ResultRow[];
 }
 
-export function MockResultClient() {
+type MockResultClientProps = {
+  homePath?: string;
+  examPath?: string;
+  resultStoragePrefix?: string;
+};
+
+export function MockResultClient({
+  homePath = "/mock-master",
+  examPath = "/mock-master/exam",
+  resultStoragePrefix = RESULT_STORAGE_PREFIX,
+}: MockResultClientProps = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const resultId = searchParams.get("id");
@@ -56,7 +66,7 @@ export function MockResultClient() {
     }
 
     const storedResult = window.sessionStorage.getItem(
-      `${RESULT_STORAGE_PREFIX}:${resultId}`,
+      `${resultStoragePrefix}:${resultId}`,
     );
 
     if (storedResult) {
@@ -64,7 +74,7 @@ export function MockResultClient() {
     }
 
     setLoaded(true);
-  }, [resultId]);
+  }, [resultId, resultStoragePrefix]);
 
   const summaryRows = useMemo(() => {
     if (!result) {
@@ -89,7 +99,7 @@ export function MockResultClient() {
             type="button"
             variant="ghost"
             size="icon"
-            onClick={() => router.push("/mock-master")}
+            onClick={() => router.push(homePath)}
             aria-label="Back"
             className="-ml-2"
           >
@@ -118,7 +128,7 @@ export function MockResultClient() {
               type="button"
               variant="ghost"
               size="icon"
-              onClick={() => router.push("/mock-master")}
+              onClick={() => router.push(homePath)}
               aria-label="Back"
               className="-ml-2"
             >
@@ -150,9 +160,7 @@ export function MockResultClient() {
           {resultId && result && result.questions && (
             <Button
               type="button"
-              onClick={() =>
-                router.push(`/mock-master/exam?review=${resultId}`)
-              }
+              onClick={() => router.push(`${examPath}?review=${resultId}`)}
               className="mt-4 h-10 rounded-xl font-bold"
             >
               <BookOpenText className="size-4" />
