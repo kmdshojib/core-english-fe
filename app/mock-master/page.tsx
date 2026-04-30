@@ -125,7 +125,7 @@ const MockMaster = () => {
       </Container>
 
       {selectedTopics.length > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 px-4 py-5 shadow-[0_-18px_45px_-24px_rgba(0,0,0,0.65)] backdrop-blur-xl">
+        <div className="fixed inset-x-0 bottom-0 z-50 px-4 py-2">
           <Container size="sm" className="px-0">
             <QuizAction
               questionCount={questionCount}

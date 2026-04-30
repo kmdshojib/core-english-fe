@@ -322,17 +322,18 @@ export function MockExamClient() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={!submitted}
-                onClick={() => setExplanationQuestionId(question.id)}
-                className="rounded-full px-4"
-              >
-                <BookOpenText className="size-4" />
-                ব্যাখ্যা
-              </Button>
+              {
+                submitted && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                  >
+                    <BookOpenText className="size-4" />
+                    ব্যাখ্যা
+                  </Button>
+                )
+              }
             </div>
           </section>
         ))}
