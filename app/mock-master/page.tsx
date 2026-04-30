@@ -89,6 +89,10 @@ const MockMaster = () => {
     router.push(`/mock-master/exam?${params.toString()}`);
   };
 
+  const handleQuestionCountChange = (count: number) => {
+    setQuestionCount(Math.min(MAX_QUESTIONS, Math.max(MIN_QUESTIONS, count)));
+  };
+
   return (
     <main
       className={`min-h-screen bg-background text-foreground ${
@@ -130,6 +134,9 @@ const MockMaster = () => {
             <QuizAction
               questionCount={questionCount}
               selectedCount={selectedTopics.length}
+              minQuestions={MIN_QUESTIONS}
+              maxQuestions={MAX_QUESTIONS}
+              onQuestionCountChange={handleQuestionCountChange}
               onDecreaseQuestions={() =>
                 setQuestionCount((current) =>
                   Math.max(MIN_QUESTIONS, current - QUESTION_STEP),

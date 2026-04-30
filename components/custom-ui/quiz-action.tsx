@@ -1,13 +1,18 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Layers3, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface QuizActionProps {
   questionCount?: number;
   selectedCount?: number;
+  minQuestions?: number;
+  maxQuestions?: number;
   onDecreaseQuestions?: () => void;
   onIncreaseQuestions?: () => void;
+  onQuestionCountChange?: (count: number) => void;
   onStart?: () => void;
   loading?: boolean;
 }
@@ -15,11 +20,37 @@ interface QuizActionProps {
 export function QuizAction({
   questionCount = 25,
   selectedCount = 0,
+  minQuestions = 1,
+  maxQuestions = 100,
   onDecreaseQuestions,
   onIncreaseQuestions,
+  onQuestionCountChange,
   onStart,
   loading = false,
 }: QuizActionProps) {
+  const [questionInput, setQuestionInput] = useState(String(questionCount));
+
+  useEffect(() => {
+    setQuestionInput(String(questionCount));
+  }, [questionCount]);
+
+  const commitQuestionInput = () => {
+    const parsedCount = Number.parseInt(questionInput, 10);
+
+    if (Number.isNaN(parsedCount)) {
+      setQuestionInput(String(questionCount));
+      return;
+    }
+
+    const nextCount = Math.min(
+      maxQuestions,
+      Math.max(minQuestions, parsedCount),
+    );
+
+    setQuestionInput(String(nextCount));
+    onQuestionCountChange?.(nextCount);
+  };
+
   return (
     <div className="w-full rounded-2xl border border-border/70 bg-background/95 p-3 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.45)] backdrop-blur">
       <div className="space-y-2.5">
@@ -40,9 +71,23 @@ export function QuizAction({
             <p className="text-xs font-medium text-muted-foreground">
               প্রশ্নের সংখ্যা
             </p>
-            <p className="text-2xl font-bold text-foreground">
-              {questionCount}
-            </p>
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={minQuestions}
+              max={maxQuestions}
+              value={questionInput}
+              onChange={(event) => setQuestionInput(event.target.value)}
+              onBlur={commitQuestionInput}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.currentTarget.blur();
+                }
+              }}
+              disabled={loading || !onQuestionCountChange}
+              className="mt-1 h-10 max-w-32 rounded-xl bg-background text-2xl font-bold"
+              aria-label="Question count"
+            />
           </div>
 
           <div className="flex items-center gap-1">

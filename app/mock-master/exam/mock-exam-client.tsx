@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -30,6 +30,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const QUESTION_BANK = [
   {
@@ -69,12 +76,31 @@ const QUESTION_BANK = [
     prompt: "Choose the correct plural form of 'child'.",
     options: ["childs", "childes", "children", "childrens"],
     answer: 2,
-    explanation:
-      "'Children' is the irregular plural form of 'child'.",
+    explanation: "'Children' is the irregular plural form of 'child'.",
   },
 ];
 
 const OPTION_LABELS = ["ক", "খ", "গ", "ঘ"];
+type AnswerFilter = "all" | "answered" | "unanswered";
+const RESULT_STORAGE_PREFIX = "mock-master-result";
+
+interface MockQuestion {
+  id: number;
+  topic: string;
+  prompt: string;
+  options: string[];
+  answer: number;
+  explanation?: string;
+}
+
+interface StoredMockResult {
+  topics: string[];
+  totalTime: number;
+  hasNegativeMarking: boolean;
+  totalQuestions: number;
+  answers: Record<number, number>;
+  questions: MockQuestion[];
+}
 
 function formatTime(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60);
@@ -86,83 +112,85 @@ function formatTime(totalSeconds: number) {
 export function MockExamClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const parsedTopics = (searchParams.get("topics") ?? "")
-    .split("||")
-    .map((item) => item.trim())
-    .filter(Boolean);
-  const topics = parsedTopics.length > 0 ? parsedTopics : ["Mock Master"];
-  const questionCount = Number(searchParams.get("questions") ?? 25);
-  const totalTime = Number(searchParams.get("time") ?? 25);
-  const hasNegativeMarking = searchParams.get("negative") !== "false";
-  const [remainingSeconds, setRemainingSeconds] = useState(totalTime * 60);
+  const reviewId = searchParams.get("review");
+  const topicsParam = searchParams.get("topics") ?? "";
+  const [reviewResult, setReviewResult] = useState<StoredMockResult | null>(
+    null,
+  );
+  const topics = useMemo(() => {
+    if (reviewResult) {
+      return reviewResult.topics;
+    }
+
+    const parsedTopics = topicsParam
+      .split("||")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    return parsedTopics.length > 0 ? parsedTopics : ["Mock Master"];
+  }, [reviewResult, topicsParam]);
+  const questionCount =
+    reviewResult?.totalQuestions ?? Number(searchParams.get("questions") ?? 25);
+  const totalTime =
+    reviewResult?.totalTime ?? Number(searchParams.get("time") ?? 25);
+  const hasNegativeMarking =
+    reviewResult?.hasNegativeMarking ??
+    searchParams.get("negative") !== "false";
+  const [remainingSeconds, setRemainingSeconds] = useState(
+    reviewId ? 0 : totalTime * 60,
+  );
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [lockedQuestions, setLockedQuestions] = useState<Record<number, true>>(
     {},
   );
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState(Boolean(reviewId));
+  const [answerFilter, setAnswerFilter] = useState<AnswerFilter>("all");
   const [submitConfirmationOpen, setSubmitConfirmationOpen] = useState(false);
   const [backConfirmationOpen, setBackConfirmationOpen] = useState(false);
   const [explanationQuestionId, setExplanationQuestionId] = useState<
     number | null
   >(null);
 
-  const questions = useMemo(
-    () =>
-      Array.from({ length: questionCount }, (_, index) => {
-        const base = QUESTION_BANK[index % QUESTION_BANK.length];
-        const questionTopic = topics[index % topics.length];
+  const questions = useMemo(() => {
+    if (reviewResult) {
+      return reviewResult.questions;
+    }
 
-        return {
-          ...base,
-          id: index + 1,
-          topic: questionTopic,
-          prompt: `${base.prompt} (${questionTopic})`,
-        };
-      }),
-    [questionCount, topics],
-  );
+    return Array.from({ length: questionCount }, (_, index) => {
+      const base = QUESTION_BANK[index % QUESTION_BANK.length];
+      const questionTopic = topics[index % topics.length];
+
+      return {
+        ...base,
+        id: index + 1,
+        topic: questionTopic,
+        prompt: `${base.prompt} (${questionTopic})`,
+      };
+    });
+  }, [questionCount, reviewResult, topics]);
 
   const activeExplanationQuestion =
     questions.find((question) => question.id === explanationQuestionId) ?? null;
 
-  useEffect(() => {
-    if (submitted) {
-      return;
-    }
-
-    const timer = window.setInterval(() => {
-      setRemainingSeconds((current) => {
-        if (current <= 1) {
-          window.clearInterval(timer);
-          setSubmitted(true);
-          return 0;
-        }
-
-        return current - 1;
-      });
-    }, 1000);
-
-    return () => window.clearInterval(timer);
-  }, [submitted]);
-
-  useEffect(() => {
-    if (submitted) {
-      return;
-    }
-
-    window.history.pushState(null, "", window.location.href);
-
-    const handlePopState = () => {
-      window.history.pushState(null, "", window.location.href);
-      setBackConfirmationOpen(true);
-    };
-
-    window.addEventListener("popstate", handlePopState);
-
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [submitted]);
-
   const answeredCount = Object.keys(answers).length;
+  const unansweredCount = Math.max(questions.length - answeredCount, 0);
+  const wrongCount = questions.filter((question) => {
+    const answer = answers[question.id];
+
+    return answer !== undefined && answer !== question.answer;
+  }).length;
+  const correctCount = answeredCount - wrongCount;
+  const filteredQuestions = useMemo(() => {
+    if (answerFilter === "answered") {
+      return questions.filter((question) => answers[question.id] !== undefined);
+    }
+
+    if (answerFilter === "unanswered") {
+      return questions.filter((question) => answers[question.id] === undefined);
+    }
+
+    return questions;
+  }, [answerFilter, answers, questions]);
   const score = questions.reduce((total, question) => {
     const answer = answers[question.id];
 
@@ -177,10 +205,149 @@ export function MockExamClient() {
     return hasNegativeMarking ? total - 0.5 : total;
   }, 0);
 
-  const handleSubmitMock = () => {
+  const finishExam = useCallback(
+    (redirectToResult = true) => {
+      const resultId = `${Date.now()}`;
+      const result = {
+        id: resultId,
+        submittedAt: new Date().toISOString(),
+        topics,
+        totalTime,
+        hasNegativeMarking,
+        totalQuestions: questions.length,
+        answers,
+        questions,
+        answeredCount,
+        correctCount,
+        wrongCount,
+        unansweredCount,
+        score,
+        rows: questions.map((question) => {
+          const selectedAnswer = answers[question.id];
+          const isAnswered = selectedAnswer !== undefined;
+          const isCorrect = selectedAnswer === question.answer;
+
+          return {
+            id: question.id,
+            topic: question.topic,
+            prompt: question.prompt,
+            selectedAnswer:
+              selectedAnswer === undefined
+                ? null
+                : question.options[selectedAnswer],
+            correctAnswer: question.options[question.answer],
+            status: !isAnswered
+              ? "Unanswered"
+              : isCorrect
+                ? "Correct"
+                : "Wrong",
+            mark: !isAnswered
+              ? 0
+              : isCorrect
+                ? 1
+                : hasNegativeMarking
+                  ? -0.5
+                  : 0,
+          };
+        }),
+      };
+
+      window.sessionStorage.setItem(
+        `${RESULT_STORAGE_PREFIX}:${resultId}`,
+        JSON.stringify(result),
+      );
+      setSubmitted(true);
+      setSubmitConfirmationOpen(false);
+      setBackConfirmationOpen(false);
+
+      if (redirectToResult) {
+        router.push(`/mock-master/result?id=${resultId}`);
+      }
+    },
+    [
+      answeredCount,
+      answers,
+      correctCount,
+      hasNegativeMarking,
+      questions,
+      router,
+      score,
+      topics,
+      totalTime,
+      unansweredCount,
+      wrongCount,
+    ],
+  );
+
+  useEffect(() => {
+    if (!reviewId) {
+      return;
+    }
+
+    const storedResult = window.sessionStorage.getItem(
+      `${RESULT_STORAGE_PREFIX}:${reviewId}`,
+    );
+
+    if (!storedResult) {
+      return;
+    }
+
+    const parsedResult = JSON.parse(storedResult) as StoredMockResult;
+    if (!Array.isArray(parsedResult.questions)) {
+      return;
+    }
+
+    const restoredAnswers = parsedResult.answers ?? {};
+    const restoredLocks = Object.keys(restoredAnswers).reduce<
+      Record<number, true>
+    >((current, questionId) => {
+      current[Number(questionId)] = true;
+      return current;
+    }, {});
+
+    setReviewResult(parsedResult);
+    setAnswers(restoredAnswers);
+    setLockedQuestions(restoredLocks);
     setSubmitted(true);
-    setSubmitConfirmationOpen(false);
-  };
+    setRemainingSeconds(0);
+  }, [reviewId]);
+
+  useEffect(() => {
+    if (submitted || reviewId) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setRemainingSeconds((current) => {
+        if (current <= 1) {
+          window.clearInterval(timer);
+          finishExam();
+          return 0;
+        }
+
+        return current - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [finishExam, reviewId, submitted]);
+
+  useEffect(() => {
+    if (submitted || reviewId) {
+      return;
+    }
+
+    window.history.pushState(null, "", window.location.href);
+
+    const handlePopState = () => {
+      window.history.pushState(null, "", window.location.href);
+      setBackConfirmationOpen(true);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [reviewId, submitted]);
 
   const handleAnswerSelect = (questionId: number, optionIndex: number) => {
     if (submitted || lockedQuestions[questionId]) {
@@ -199,7 +366,9 @@ export function MockExamClient() {
 
   const handleBackPress = () => {
     if (submitted) {
-      router.push("/mock-master");
+      router.push(
+        reviewId ? `/mock-master/result?id=${reviewId}` : "/mock-master",
+      );
       return;
     }
 
@@ -207,8 +376,7 @@ export function MockExamClient() {
   };
 
   const handleSubmitAndLeave = () => {
-    setSubmitted(true);
-    setBackConfirmationOpen(false);
+    finishExam(false);
     router.push("/mock-master");
   };
 
@@ -237,10 +405,34 @@ export function MockExamClient() {
             <div className="w-9" />
           </div>
 
-          <p className="mx-auto mt-3 max-w-md text-center text-sm leading-relaxed text-muted-foreground">
+          {/* <p className="mx-auto mt-3 max-w-md text-center text-sm leading-relaxed text-muted-foreground">
             প্রতিটি প্রশ্নের পূর্ণমান প্রশ্নের পাশে লেখা আছে
             {hasNegativeMarking ? " এবং ভুলপ্রতি ০.৫ মার্ক কাটা যাবে" : ""}
-          </p>
+          </p> */}
+
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background/70 p-3">
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                প্রশ্ন ফিল্টার
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Answered {answeredCount} • Unanswered {unansweredCount}
+              </p>
+            </div>
+            <Select
+              value={answerFilter}
+              onValueChange={(value) => setAnswerFilter(value as AnswerFilter)}
+            >
+              <SelectTrigger className="w-44 bg-card">
+                <SelectValue placeholder="All questions" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All questions</SelectItem>
+                <SelectItem value="answered">Answered</SelectItem>
+                <SelectItem value="unanswered">Unanswered</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </Container>
       </div>
 
@@ -256,36 +448,30 @@ export function MockExamClient() {
           </div>
         )}
 
-        {questions.map((question) => (
+        {filteredQuestions.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-border bg-card/70 px-4 py-8 text-center text-sm text-muted-foreground">
+            No questions found for this filter.
+          </div>
+        )}
+
+        {filteredQuestions.map((question) => (
           <section
             key={question.id}
             className="space-y-4 border-b border-border pb-5 last:border-b-0"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-2">
-                <div className="inline-flex rounded-full border border-border bg-muted/70 px-3 py-1 text-xs font-semibold text-muted-foreground">
-                  {question.topic}
-                </div>
                 <h2 className="text-lg font-semibold leading-snug">
                   {question.id}. {question.prompt}
                 </h2>
-              </div>
-              <div className="flex flex-col items-end gap-2">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold">
-                  1
-                </span>
-                {lockedQuestions[question.id] && !submitted && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
-                    <Lock className="size-3" />
-                    Locked
-                  </span>
-                )}
               </div>
             </div>
 
             <div className="space-y-3">
               {question.options.map((option, optionIndex) => {
                 const isSelected = answers[question.id] === optionIndex;
+                const isLocked = Boolean(lockedQuestions[question.id]);
+                const isUnavailable = isLocked && !isSelected && !submitted;
                 const isCorrect = submitted && question.answer === optionIndex;
                 const isWrong =
                   submitted && isSelected && question.answer !== optionIndex;
@@ -294,7 +480,7 @@ export function MockExamClient() {
                   <button
                     key={option}
                     type="button"
-                    disabled={submitted || Boolean(lockedQuestions[question.id])}
+                    disabled={submitted || (isLocked && !isSelected)}
                     onClick={() => handleAnswerSelect(question.id, optionIndex)}
                     className={`flex w-full items-center gap-4 rounded-2xl border px-4 py-4 text-left transition ${
                       isCorrect
@@ -304,12 +490,18 @@ export function MockExamClient() {
                           : isSelected
                             ? "border-primary bg-primary/10"
                             : "border-border bg-card hover:border-foreground/20"
-                    }`}
+                    } disabled:cursor-not-allowed ${isUnavailable ? "opacity-60" : ""}`}
                   >
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-current text-base font-bold">
                       {OPTION_LABELS[optionIndex]}
                     </span>
-                    <span className="font-medium">{option}</span>
+                    <span className="flex-1 font-medium">{option}</span>
+                    {/* {isUnavailable && (
+                      <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                        <Lock className="size-3" />
+                        Locked
+                      </span>
+                    )} */}
                     {submitted && isCorrect && (
                       <CheckCircle2 className="ml-auto size-5 shrink-0 text-emerald-600" />
                     )}
@@ -322,24 +514,23 @@ export function MockExamClient() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {
-                submitted && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                  >
-                    <BookOpenText className="size-4" />
-                    ব্যাখ্যা
-                  </Button>
-                )
-              }
+              {submitted && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setExplanationQuestionId(question.id)}
+                >
+                  <BookOpenText className="size-4" />
+                  ব্যাখ্যা
+                </Button>
+              )}
             </div>
           </section>
         ))}
       </Container>
 
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 px-4 py-5 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 px-4 py-2 backdrop-blur">
         <Container size="sm">
           <Button
             size="lg"
@@ -375,7 +566,7 @@ export function MockExamClient() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>না</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSubmitMock}>
+            <AlertDialogAction onClick={() => finishExam()}>
               সাবমিট করো
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -399,7 +590,7 @@ export function MockExamClient() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>থাকুন</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSubmitAndLeave}>
+            <AlertDialogAction onClick={() => finishExam()}>
               সাবমিট করে বের হন
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -421,7 +612,8 @@ export function MockExamClient() {
           {activeExplanationQuestion && (
             <div className="space-y-3">
               <p className="text-sm font-semibold text-foreground">
-                {activeExplanationQuestion.id}. {activeExplanationQuestion.prompt}
+                {activeExplanationQuestion.id}.{" "}
+                {activeExplanationQuestion.prompt}
               </p>
               <p className="text-sm leading-6 text-muted-foreground">
                 {activeExplanationQuestion.explanation ??
